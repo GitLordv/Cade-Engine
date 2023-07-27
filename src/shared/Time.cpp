@@ -1,31 +1,28 @@
 #include "engine/shared/Time.h"
-
+#include "GLFW/glfw3.h"
 
 void Time::Start()
 {
 	mainTime = glfwGetTime();
 }
 
-
 void Time::Restart()
 {
 	glfwSetTime(0.0);
 }
-
 
 double Time::GetMainTime()
 {
 	return mainTime;
 }
 
-
 double Time::GetDeltaTime()
 {
-	static double deltaTime, oldTime, newTime;
+	static double oldTime, newTime;
 
 	newTime = mainTime;
 
-	deltaTime = newTime - oldTime;
+	auto deltaTime = newTime - oldTime;
 	oldTime = newTime;
 
 	return deltaTime;

@@ -8,7 +8,7 @@
 class Engine
 {
 public:
-	Engine() = delete;
+	Engine()  = delete;
 	~Engine() = delete;
 
 	static void Startup();
@@ -17,7 +17,7 @@ public:
 private:
 	static void Init();
 	static void Destroy();
-	static void RawInput(GLFWwindow* window);
+	static void RawInput(GLFWwindow* window, Camera &cam);
 	static void CallbacksInput(GLFWwindow* window);
 };
 

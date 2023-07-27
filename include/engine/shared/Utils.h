@@ -19,8 +19,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <array>
+#include <algorithm>
 #include <memory>
-
 
 using namespace gl;
 using uint = unsigned int;
@@ -31,7 +32,7 @@ namespace Custom
 {
 	static inline auto GetVendorInfo = []()
 	{
-		std::clog << "Log: OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+		std::clog << "Log: OpenGL version: " << glGetString(GL_VERSION) << std::endl << std::endl;
 	};
 
 

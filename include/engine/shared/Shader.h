@@ -21,10 +21,9 @@ public:
 	void setVec3(const std::string &name, glm::vec3 &value) const;
 	void setVec4(const std::string &name, glm::vec4 &value) const;
 
-
 private:
 
-	GLuint program;
-
 	void CheckCompileErrors(GLuint shader, const std::string &type);
+	
+	GLuint program;
 };

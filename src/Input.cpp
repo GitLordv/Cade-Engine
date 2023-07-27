@@ -4,8 +4,7 @@
 #include "engine/Engine.h"
 #include "engine/Input.h"
 
-
-extern GLFWwindow *window;
+#include "engine/audio/AudioSystem.h"
 
 
 //Callbacks
@@ -28,15 +27,41 @@ void Input::CursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
 
 void Input::KeyboardCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	static ALuint Music1, Music2;
+
+	static bool isLoaded = false;
+	if (mods == GLFW_MOD_SHIFT && action == GLFW_PRESS)
 	{
-		glfwSetWindowShouldClose(window, true);
+		/*if (!isLoaded)
+		{
+			Music1 = AudioSystem::LoadSound("Data/Music/Jibberish Jungle - Danger Ahead_cut.wav");
+			Music2 = AudioSystem::LoadSound("Data/Music/The Tower of Babel (Rising).wav");
+			isLoaded = true;
+		}*/
 	}
 
+	if (key == GLFW_KEY_7 && action == GLFW_PRESS)
+	{
+
+	}
+
+	static bool isPressed = false;
 	if (key == GLFW_KEY_C && action == GLFW_PRESS)
 	{
-		std::cout << "\nLoading config.." << std::endl;
-		Config::LoadConfig(window);
+		if (!isPressed && isLoaded)
+		{
+			AudioSystem::StopSound(Music2);
+			AudioSystem::PlaySound(Music1, 0.6f, true);
+			//AudioSystem::PauseSound(1);
+			isPressed = true;
+		}
+		else if (isPressed && isLoaded)
+		{
+			//AudioSystem::UnPauseSound(1);
+			AudioSystem::StopSound(Music1);
+			AudioSystem::PlaySound(Music2, 0.6f, true);
+			isPressed = false;
+		}
 	}
 
 	//View wireframe
@@ -50,6 +75,13 @@ void Input::KeyboardCallback(GLFWwindow *window, int key, int scancode, int acti
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, true);
+		Config::SaveConfig(window);
+	}
+
 }
 
 
@@ -72,43 +104,24 @@ void Input::WindowCloseCallback(GLFWwindow *window)
 }
 
 
+void Input::WindowMaximizeCallback(GLFWwindow *window, int maximized)
+{
+	if (maximized)
+	{
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+		glViewport(0, 0, width, height);
+		glfwGetFramebufferSize(window, &Config::fbW, &Config::fbH);
+	}
+}
+
+float aTwe = 0.0f;
 //Raw
 void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 {
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-	{
-
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-	{
-	}
-
-	//Camera
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	{
-		cam.KeyboardInput(CameraDirection::FORWARD, deltaTime);
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		cam.KeyboardInput(CameraDirection::BACKWARD, deltaTime);
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	{
-		cam.KeyboardInput(CameraDirection::LEFT, deltaTime);
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	{
-		cam.KeyboardInput(CameraDirection::RIGHT, deltaTime);
-	}
-
-
 	// Обработка мыши
 	static bool firstMouse = true;
-	static double lastX = 0, lastY = 0;
+	static double lastX{0.0}, lastY{0.0};
 	bool disabledCursor = false;
 
 	if (firstMouse)
@@ -119,10 +132,10 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-	lastX = (float)xpos;
-	lastY = (float)ypos;
+	float xoffset = static_cast<float>(xpos - lastX);
+	float yoffset = static_cast<float>(lastY - ypos); // reversed since y-coordinates go from bottom to top
+	lastX = static_cast<double>(xpos);
+	lastY = static_cast<double>(ypos);
 
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 	{
@@ -135,9 +148,52 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 		disabledCursor = false;
 	}
 
-
+	//Moving logic
 	if (disabledCursor)
 	{
-		cam.MouseMovingInput(xoffset, yoffset, true);
+		cam.MouseMovingInput(xoffset, yoffset);
+
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::UP, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::DOWN, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::FORWARD, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::BACKWARD, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::LEFT, deltaTime);
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			cam.KeyboardInput(CameraDirection::RIGHT, deltaTime);
+		}
+
+	}
+
+
+	static auto isAnimating = false;
+	static auto startTime = 0.0;
+	static auto start = glm::vec3(0.0f);
+	static auto target = glm::vec3(-10.0f, 60.0f, 100.0f);
+	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS && !isAnimating)
+	{
+		isAnimating = true;
+		start = cam.getPosition();
+		startTime = Time::GetMainTime();
+
+	}
+	if (isAnimating && cam.AnimatePos(start, target, 1.5, startTime))
+	{
+		isAnimating = false;
 	}
 }

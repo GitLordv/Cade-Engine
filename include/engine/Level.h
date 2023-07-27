@@ -2,22 +2,19 @@
 
 #include "engine/shared/Utils.h"
 #include "engine/shared/Types.h"
-#include "yaml-cpp/yaml.h"
+#include "pugixml.hpp"
 
+#define LEVEL
 
 class Level
 {
 public:
-	Level();
-	Level(const std::string& filePath);
 
-	void load(const std::string filePath);
-	void save();
+	static std::vector<SpriteData> LoadLevel(std::string_view filePath);
+	static void SaveLevel(const std::string &filename);
+
+	static inline std::unordered_map<std::string, std::shared_ptr<Texture>> textureMap;
 
 private:
 
-	YAML::Node level;
-	std::vector<LevelTexture> texturesList;
-	std::vector<SpriteData> spritesDataList;
 };
-

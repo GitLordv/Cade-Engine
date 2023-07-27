@@ -14,6 +14,7 @@ public:
 	static void FramebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void WindowSizeCallback(GLFWwindow* window, int width, int height);
 	static void WindowCloseCallback(GLFWwindow* window);
+	static void WindowMaximizeCallback(GLFWwindow* window, int maximized);
 
 	//Raw
 	static void ProcessInput(GLFWwindow* window, Camera& cam, double deltaTime);
