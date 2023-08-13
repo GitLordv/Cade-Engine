@@ -1,116 +1,183 @@
 #include "engine/Camera.h"
 #include "engine/shared/Time.h"
+#include <iostream>
 
-Camera::Camera(CameraConfig &config) 
-    : front(glm::vec3(0.0f, 0.0f, -1.0f)),
-    up(glm::vec3(0.0f, 1.0f, 0.0f)),
-    pitch(0.0f), 
-    yaw(-90.0f)
+Camera::Camera()
 {
-    worldUp     = up;
-    position    = config.position;
-    speed       = config.speed;
-    sensitivity = config.sens;
-
-    UpdateCameraVectors();
+	CameraConfig config;
+	PreInitCamera(config);
 }
 
-void Camera::KeyboardInput(CameraDirection direction, double deltaTime)
+Camera::Camera(const CameraConfig &config)
 {
-    auto velocity = speed * static_cast<float>(deltaTime);
+	PreInitCamera(config);
+}
 
-    if (direction == CameraDirection::FORWARD)
-    {
-        position += front * velocity;
-    }
-    if (direction == CameraDirection::BACKWARD)
-    {
-        position -= front * velocity;
-    }
-    if (direction == CameraDirection::LEFT)
-    {
-        position -= right * velocity;
-    }
-    if (direction == CameraDirection::RIGHT)
-    {
-        position += right * velocity;
-    }
-    if (direction == CameraDirection::UP)
-    {
-        position += worldUp * velocity;
-    }
-    if (direction == CameraDirection::DOWN)
-    {
-        position -= worldUp * velocity;
-    }
+void Camera::PreInitCamera(const CameraConfig &config)
+{
+	front = glm::vec3(0.0F, 0.0F, -1.0F);
+	up    = glm::vec3(0.0F, 1.0F, 0.0F);
+	pitch = 0.0F;
+	yaw = -90.0F;
+	worldUp = up;
+	position = config.position;
+	speed = config.speed;
+	sensitivity = config.sens;
+	inputActive = true;
+
+	UpdateCameraVectors();
+}
+
+void Camera::KeyboardInput(const CameraDirection direction, double deltaTime)
+{
+	auto velocity = speed * static_cast<float>(deltaTime);
+
+	switch (direction)
+	{
+		case CameraDirection::FORWARD:
+			position += front * velocity;
+			break;
+		case CameraDirection::BACKWARD:
+			position -= front * velocity;
+			break;
+		case CameraDirection::LEFT:
+			position -= right * velocity;
+			break;
+		case CameraDirection::RIGHT:
+			position += right * velocity;
+			break;
+		case CameraDirection::UP:
+			position += worldUp * velocity;
+			break;
+		case CameraDirection::DOWN:
+			position -= worldUp * velocity;
+			break;
+		default:
+			std::cerr << "Unknown camera direction value!\n";
+			break;
+	}
 }
 
 void Camera::MouseMovingInput(float xoffset, float yoffset, bool constrainPitch)
 {
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
 
-    yaw += xoffset;
-    pitch += yoffset;
+	yaw   += xoffset;
+	pitch += yoffset;
 
-    if (constrainPitch)
-    {
-        if (pitch > 89.0f)
-        {
-            pitch = 89.0f;
-        }
-        if (pitch < -89.0f)
-        {
-            pitch = -89.0f;
-        }
-    }
-    UpdateCameraVectors();
+	if (constrainPitch)
+	{
+		if (pitch > 89.0F)
+		{
+			pitch = 89.0F;
+		}
+		if (pitch < -89.0F)
+		{
+			pitch = -89.0F;
+		}
+	}
+	UpdateCameraVectors();
 }
 
 void Camera::UpdateCameraVectors()
 {
-    glm::vec3 newFront(0.0f);
-    newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    newFront.y = sin(glm::radians(pitch));
-    newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front = glm::normalize(newFront);
-    right = glm::normalize(glm::cross(front, worldUp));
-    up = glm::normalize(glm::cross(right, front));
+	glm::vec3 newFront(0.0F);
+	newFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	newFront.y = sin(glm::radians(pitch));
+	newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front = glm::normalize(newFront);
+	right = glm::normalize(glm::cross(front, worldUp));
+	up = glm::normalize(glm::cross(right, front));
 }
 
 bool Camera::AnimatePos(glm::vec3 &start, const glm::vec3 end, double duration, double startTime)
 {
-    auto currentTime = Time::GetMainTime();
-    auto elapsedTime = currentTime - startTime;
-    auto step = static_cast<float>(elapsedTime / duration);
-    step = glm::clamp(step, 0.0f, 1.0f);
-    auto newPos = glm::mix(start, end, step);
-    setPosition(newPos);
-    return elapsedTime >= duration;
+	auto currentTime = Time::FixedTime();
+	auto elapsedTime = currentTime - startTime;
+	auto progress = static_cast<float>(elapsedTime / duration);
+	progress = glm::clamp(progress, 0.0F, 1.0F);
+	auto newPos = glm::mix(start, end, progress);
+	setPosition(newPos);
+	return elapsedTime >= duration;
 }
 
-glm::mat4 Camera::getViewMatrix() const 
+bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration, double startTime)
 {
-    return glm::lookAt(position, position + front, worldUp);
+	auto currentTime = Time::FixedTime();
+	auto elapsedTime = currentTime - startTime;
+	auto progress = static_cast<float>(elapsedTime / duration);
+	progress = glm::clamp(progress, 0.0F, 1.0F);
+
+	if (progress >= 1.0F)
+	{
+		// Animation is finished
+		setPosition(controlPoints.back()); // Set the camera position to the last control point
+		return true;
+	}
+
+	// Calculate the current segment based on the progress
+	float segmentProgress = progress * (controlPoints.size() - 1);
+	size_t currentSegment = static_cast<size_t>(segmentProgress);
+	float segmentFraction = segmentProgress - currentSegment;
+
+	// Calculate the current position between the current and next control points
+	glm::vec3 startPos = controlPoints[currentSegment];
+	glm::vec3 endPos = controlPoints[currentSegment + 1];
+	glm::vec3 newPos = glm::mix(startPos, endPos, segmentFraction);
+
+	setPosition(newPos);
+
+	return false;
+}
+
+glm::mat4 Camera::getViewMatrix() const
+{
+	return glm::lookAt(position, position + front, worldUp);
 }
 
 glm::vec3 Camera::getPosition() const
 {
-    return position;
+	return position;
+}
+
+glm::vec3 Camera::getUp() const
+{
+	return up;
+}
+
+float Camera::getSpeed() const
+{
+	return speed;
 }
 
 void Camera::setPosition(glm::vec3 &value)
 {
-    position = value;
+	position = value;
 }
 
-void Camera::setSpeed(float &value)
+void Camera::setSpeed(const float value)
 {
-    speed = value;
+	speed = value;
 }
 
-void Camera::setSensitivity(float &value)
+void Camera::setSensitivity(const float value)
 {
-    sensitivity = value;
+	sensitivity = value;
 }
 
+//State
+void Camera::ActivateInput()
+{
+	inputActive = true;
+}
+
+void Camera::DeactivateInput()
+{
+	inputActive = false;
+}
+
+bool Camera::isActiveInput()
+{
+	return inputActive;
+}

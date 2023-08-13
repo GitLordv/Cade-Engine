@@ -16,7 +16,9 @@ public:
     void setMin(const glm::vec3 &min);
     void setMax(const glm::vec3 &max);
 
-    bool intersects(const AABB &other) const;
+    bool IntersectAABB(const AABB &another) const;
+    bool IntersectPoint(const glm::vec2 &point) const;
+    bool IntersectPoint(const glm::vec3 &point) const;
 
 private:
 

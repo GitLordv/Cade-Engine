@@ -24,9 +24,7 @@
 #include <memory>
 
 using namespace gl;
-using uint = unsigned int;
-namespace fs = std::filesystem;
-
+using GLid = GLuint;
 
 namespace Custom
 {
@@ -40,10 +38,10 @@ namespace Custom
 	{
 		return glm::vec4
 		(
-			static_cast<GLfloat>(r) / 255.0f,
-			static_cast<GLfloat>(g) / 255.0f,
-			static_cast<GLfloat>(b) / 255.0f,
-			static_cast<GLfloat>(a) / 255.0f
+			static_cast<GLfloat>(r) / 255.0F,
+			static_cast<GLfloat>(g) / 255.0F,
+			static_cast<GLfloat>(b) / 255.0F,
+			static_cast<GLfloat>(a) / 255.0F
 		);
 	};
 
@@ -59,20 +57,20 @@ namespace Custom
 		auto HexToRgb = [](GLfloat &r, GLfloat &g, GLfloat &b, const std::string& hexValue)
 		{
 			auto hex = std::stoul(hexValue, nullptr, 16);
-			r = static_cast<GLfloat>((hex >> 16) & 0xFF) / 255.0f;
-			g = static_cast<GLfloat>((hex >> 8)  & 0xFF) / 255.0f;
-			b = static_cast<GLfloat>( hex        & 0xFF) / 255.0f;
+			r = static_cast<GLfloat>((hex >> 16) & 0xFF) / 255.0F;
+			g = static_cast<GLfloat>((hex >> 8)  & 0xFF) / 255.0F;
+			b = static_cast<GLfloat>( hex        & 0xFF) / 255.0F;
 		};
 
 		GLfloat r, g, b;
 
 		HexToRgb(r, g, b, hexValue);
-		glClearColor(r, g, b, 1.0f);
+		glClearColor(r, g, b, 1.0F);
 	}
 
 }
 
-
 //GLOBAL
-static GLFWwindow *window;
 static inline const std::string &dataFolder = "Data";
+
+

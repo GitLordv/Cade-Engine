@@ -5,8 +5,8 @@ class Time
 public:
 	static void Start();
 	static void Restart();
-	static double GetMainTime();
-	static double GetDeltaTime();
+	static double FixedTime();
+	static double DeltaTime();
 
 private:
 	static inline double mainTime;

@@ -7,15 +7,17 @@
 #include <iostream>
 #include <vector>
 #include <optional>
+#include <string_view>
 
 
 using AudioData = std::vector<int16_t>;
+using ALid = ALuint;
 
 struct AudioInfo
 {
-	int numChannels;
-	int sampleRate;
-	int bitsPerSample;
+	uint32_t sampleRate;
+	uint16_t numChannels;
+	uint16_t bitsPerSample;
 	uint32_t dataSize;
 	float durationInSeconds;
 };
@@ -31,21 +33,22 @@ public:
 	bool LoadFromFile(const std::string &filePath);
 	void Unload();
 
-	ALuint GetBufferId() const;
-	int GetFormat() const;
-	int GetSampleRate() const;
-	int GetNumSamples() const;
-	int GetNumChannels() const;
+	ALid GetBufferId() const;
+	ALuint GetFormat() const;
+	ALuint GetSampleRate() const;
+	ALuint GetNumSamples() const;
+	ALuint GetNumChannels() const;
 
 private:
 
 	AudioData audioData;
 	ALuint bufferId;
-	int format;
-	int sampleRate;
-	int numSamples;
-	int numChannels;
+	ALuint format;
+	ALuint sampleRate;
+	ALuint numSamples;
+	ALuint numChannels;
 	
-	static std::optional<std::pair<AudioInfo, AudioData>> LoadWavFile(const std::string &filePath);
+	static auto LoadWavFile(const std::string &filePath) -> std::optional<std::pair<AudioInfo, AudioData>>;
+	static auto LoadFlacFile(const std::string &filePath) -> std::optional<std::pair<AudioInfo, AudioData>>;
 };
 

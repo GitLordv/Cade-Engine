@@ -11,12 +11,11 @@ public:
 	static void SaveConfig(GLFWwindow *window);
 	static void LoadConfig(GLFWwindow *window);
 
-	static inline uint windowWidth  = 1400;
-	static inline uint windowHeight = 900;
+	static inline unsigned int winW = 900;
+	static inline unsigned int winH = 800;
 
-	static inline int fbW = windowWidth;
-	static inline int fbH = windowHeight;
-
+	static inline int FBW = winW;
+	static inline int FBH = winH;
 
 private:
 

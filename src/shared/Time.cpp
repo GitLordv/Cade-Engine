@@ -11,19 +11,18 @@ void Time::Restart()
 	glfwSetTime(0.0);
 }
 
-double Time::GetMainTime()
+double Time::FixedTime()
 {
 	return mainTime;
 }
 
-double Time::GetDeltaTime()
+double Time::DeltaTime()
 {
-	static double oldTime, newTime;
+    static double oldTime = mainTime; // Запоминаем предыдущее значение mainTime.
+    double newTime = glfwGetTime();
 
-	newTime = mainTime;
+    double deltaTime = newTime - oldTime;
+    oldTime = newTime;
 
-	auto deltaTime = newTime - oldTime;
-	oldTime = newTime;
-
-	return deltaTime;
+    return deltaTime;
 }
