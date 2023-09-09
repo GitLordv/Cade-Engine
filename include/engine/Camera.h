@@ -8,12 +8,12 @@
 
 struct CameraConfig
 {
-	glm::vec3 position{0.0F, 0.0F, 5.0F};
+	glm::vec3 position{0.0F, 0.0F, 9.0F};
 	float speed = 0.95F;
-	float sens = 0.09F;
+	float sens = 0.093F;
 };
 
-enum class CameraDirection
+enum class CameraDirection : unsigned short
 {
 	FORWARD,
 	BACKWARD,
@@ -37,6 +37,7 @@ public:
 	void setPosition(glm::vec3 &value);
 	void setSpeed(const float value);
 	void setSensitivity(const float value);
+	void setEye(const glm::vec3 &newEye);
 
 	glm::mat4 getViewMatrix() const;
 	glm::vec3 getPosition() const;
@@ -47,17 +48,22 @@ public:
 	bool AnimatePos(glm::vec3 &start, const glm::vec3 end, double duration, double startTime);
 	bool AnimatePath(std::vector<glm::vec3> &controlPoints, double duration, double startTime);
 
-	//State
+	//States
 	void ActivateInput();
 	void DeactivateInput();
-	bool isActiveInput();
+	bool isActiveInput() const;
+
+	void LockEye();
+	void UnlockEye();
+	bool isLockedEye() const;
 
 private:
 
 	void UpdateCameraVectors();
 	void PreInitCamera(const CameraConfig &config);
 
-	bool inputActive;
+	bool isInputActive;
+	bool isEyeLocked;
 
 	glm::vec3 position;
 	glm::vec3 up;

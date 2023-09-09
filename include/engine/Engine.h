@@ -13,6 +13,7 @@
 #include "engine/shared/Shader.h"
 #include "engine/shared/Config.h"
 #include "engine/shared/UVRect.h"
+#include "engine/shared/GLCallbacks.h"
 
 #include "engine/audio/AudioSystem.h"
 

@@ -56,7 +56,7 @@ bool AudioBuffer::LoadFromFile(const std::string &filePath)
         return false;
     }
 
-    std::clog << "Sound Data size: " << rawData.value().second.size() << std::endl;
+    //std::clog << "Sound Data size: " << rawData.value().second.size() << std::endl;
 
     //Copy the audio data
     audioData = std::move(rawData.value().second);

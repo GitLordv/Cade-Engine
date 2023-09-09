@@ -1,6 +1,5 @@
 #include "engine/Texture.h"
 
-
 Texture::Texture() : id(0), width(0), height(0), pixels(nullptr) {}
 
 Texture::Texture(std::string_view path, std::string_view wrap)
@@ -13,6 +12,7 @@ Texture::~Texture()
 	glDeleteTextures(1, &id);
 	SOIL_free_image_data(pixels);
 }
+
 
 void Texture::Generate(const std::string_view path, std::string_view wrap)
 {
@@ -57,7 +57,7 @@ void Texture::Generate(const std::string_view path, std::string_view wrap)
 	glTextureSubImage2D(id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 	glGenerateTextureMipmap(id);
 
-	std::cout << "\nTexID: " << id << " TexW: " << width << " TexH: " << height << std::endl;
+	std::cout << "\nID: " << id << " | " << width << "x" << height << " | " << path << std::endl;
 }
 
 void Texture::Bind()

@@ -28,7 +28,7 @@ void AudioSystem::Initialize()
 
 	ALfloat listenerPos[] = {0.0,0.0,0.0};
 	ALfloat listenerVel[] = {0.0,0.0,0.0};
-	ALfloat listenerOri[] = {0.0,0.0,-1.0, 0.0,1.0,0.0};
+	ALfloat listenerOri[] = {0.0,0.0,-1.0,0.0,1.0,0.0};
 
 	ALuint error = 0;
 
@@ -134,7 +134,6 @@ void AudioSystem::PlaySound3D(ALuint soundId, glm::vec3 position, ALfloat volume
 		float rolloffFactor = 1.0F;
 		float maxDistance = 10.0F;
 
-
 		alSourcef(sourceId, AL_GAIN, volume);
 		alSourcei(sourceId, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
 		alSourcef(sourceId, AL_REFERENCE_DISTANCE, referenceDistance);
@@ -154,7 +153,7 @@ void AudioSystem::SetSoundStartTime(ALuint soundId, ALfloat offsetSec)
 	{
 		ALuint sourceId = it->second;
 
-		alSourcef(sourceId, AL_SEC_OFFSET, offsetSec); 
+		alSourcef(sourceId, AL_SEC_OFFSET, offsetSec);
 	}
 }
 

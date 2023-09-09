@@ -109,25 +109,22 @@ void Renderer::DrawSprite(Level::Sprite &spriteData, Camera &cam)
 
 	auto UpdateAnimationEx = [&spriteData](Shader &shader)
 	{
-		//For animation
 		GLuint animType = 0;
-		if (spriteData.animation.type == "Wind") animType = 1;
-		else if (spriteData.animation.type == "Rotate") animType = 2;
-		else if (spriteData.animation.type == "Flick") animType = 3;
-		else { spriteData.isAnim = false; }
-
-		if (spriteData.isAnim && animType == 1)
+		if (spriteData.isAnim)
 		{
-		}
-		else if (spriteData.isAnim && animType == 2)
-		{
-			spriteData.rotation.z -= glm::radians(spriteData.animation.speed);
-		}
-		else if (spriteData.isAnim && animType == 3)
-		{
-			GLfloat flickerSpeed = spriteData.animation.speed;
-			GLfloat alpha = glm::sin(static_cast<GLfloat>(Time::FixedTime()) * flickerSpeed);
-			spriteData.tint.a = glm::clamp(alpha, 0.0F, 1.0F);
+			if (spriteData.animation.type == "Wind") animType = 1;
+			else if (spriteData.animation.type == "Rotate")
+			{
+				animType = 2;
+				spriteData.rotation.z -= glm::radians(spriteData.animation.speed);
+			}
+			else if (spriteData.animation.type == "Flick")
+			{
+				animType = 3;
+				GLfloat flickerSpeed = spriteData.animation.speed;
+				GLfloat alpha = glm::sin(static_cast<GLfloat>(Time::FixedTime()) * flickerSpeed);
+				spriteData.tint.a = glm::clamp(alpha, 0.0F, 1.0F);
+			}
 		}
 		shader.setUint("animType", animType);
 		shader.setBool("isAnim", spriteData.isAnim);
@@ -180,8 +177,8 @@ void Renderer::InitRenderData()
 
 	constexpr GLuint indices[] =
 	{
-		1, 2, 3,  // Первый треугольник
-		1, 3, 4   // Второй треугольник
+		1, 2, 3,  // fTri
+		1, 3, 4   // sTri
 	};
 
 	GLuint vbo, ibo;
@@ -198,4 +195,56 @@ void Renderer::InitRenderData()
 	glEnableVertexArrayAttrib(quadVAO, 0);
 	glVertexArrayAttribFormat(quadVAO, 0, 4, GL_FLOAT, GL_FALSE, 0);
 	glVertexArrayAttribBinding(quadVAO, 0, 0);
+}
+
+
+//Test
+void Renderer::DrawAABB(const AABB &aabb)
+{
+	glm::vec3 min = aabb.getMin();
+	glm::vec3 max = aabb.getMax();
+
+	GLfloat vertices[] =
+	{
+		min.x, min.y, min.z,
+		max.x, min.y, min.z,
+		max.x, min.y, max.z,
+		min.x, min.y, max.z,
+		min.x, max.y, min.z,
+		max.x, max.y, min.z,
+		max.x, max.y, max.z,
+		min.x, max.y, max.z,
+	};
+
+	GLuint indices[] =
+	{
+		0, 1, 1, 2, 2, 3, 3, 0,
+		4, 5, 5, 6, 6, 7, 7, 4,
+		0, 4, 1, 5, 2, 6, 3, 7,
+		0, 1, 1, 5, 5, 6, 6, 2,
+		2, 3, 3, 7, 7, 4, 4, 0
+	};
+
+	GLuint VBO, EBO;
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+
+	auto model = glm::mat4(1.0F);
+	model = glm::translate(model, glm::vec3(0.0F));
+	model = glm::scale(model, aabb.getSize());
+	
+	shader.use();
+	shader.setMat4("model", model);
+
+	glDrawElements(GL_LINES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 }

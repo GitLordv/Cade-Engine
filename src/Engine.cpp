@@ -35,6 +35,9 @@ void Engine::Init()
 	AudioSystem::Initialize();
 	CallbacksInput(editorWindow);
 
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 }
@@ -44,40 +47,44 @@ void Engine::Render()
 {
 	Camera camera;
 	LevelsSystem lvlSys(camera);
-	
+
 	Shader spriteShader("Data/Shaders/Sprite.vert", "Data/Shaders/Sprite.frag");
 	auto SR = std::make_unique<Renderer>(spriteShader);
-	
+
 	Shader uiShader("Data/Shaders/UI.vert", "Data/Shaders/UI.frag");
 	auto UIR = std::make_unique<Renderer>(uiShader);
 
+	Shader aabbShader("Data/Shaders/AABB.vert", "Data/Shaders/AABB.frag");
+	auto ABR = std::make_unique<Renderer>(aabbShader);
+
 	lvlSys.PreloadEngineResources("Data/Engine/MissingTex.png");
-	Level sprites = lvlSys.LoadLevel("Data/Levels/Level.xml");
+	Level level = lvlSys.LoadLevel("Data/Levels/Level.xml");
 
 	//Z-Depth sort sprites in level
-	std::sort(sprites.sprites.begin(), sprites.sprites.end(),
+	std::sort(level.sprites.begin(), level.sprites.end(),
 		[](const Level::Sprite &a, const Level::Sprite &b) { return a.position.z >= b.position.z; });
 
 	//Test
-	glm::vec3 pos(60.0F, 0.0F, 10.4F);
 	glm::vec3 min(0.0F, 0.0F, 0.0F);
-	glm::vec3 max(5.0F, 5.0F, 5.0F);
-	glm::vec3 col(0.92F, 0.17F, 0.36F);
+	glm::vec3 max(1.0F, 1.0F, 1.0F);
 	AABB aabb(min, max);
+	
+	glm::vec3 pos(5.0F, 0.0F, 3.5F);
+	aabb.setPosition(pos);
 
-	Shader TestShader;
 	TriggerBox trigger;
-
 	trigger.setSize(aabb);
 	trigger.setPosition(pos);
-	trigger.setMode(TriggerMode::ONCE);
-	
+	trigger.setMode(TriggerMode::MULTIPLE);
+
 	std::shared_ptr<Texture> tagIcons = std::make_shared<Texture>("Data/Engine/TagIcons.png", "CC");
 	Icon bounce;
 	bounce.position = trigger.getPosition();
 	bounce.angle = 0.0F;
 	bounce.size = glm::vec2(1.0F, 1.0F);
 	bounce.type = IconType::TRIGGER;
+
+
 
 	//Main loop
 	glfwSwapInterval(0);
@@ -93,7 +100,6 @@ void Engine::Render()
 		auto view = camera.getViewMatrix();
 		auto projection = glm::infinitePerspective(glm::radians(45.0F), aspect, 0.1F);
 
-
 		spriteShader.use();
 		spriteShader.setMat4("view", view);
 		spriteShader.setMat4("projection", projection);
@@ -103,19 +109,24 @@ void Engine::Render()
 		uiShader.setMat4("view", view);
 		uiShader.setMat4("projection", projection);
 
+		aabbShader.use();
+		aabbShader.setMat4("view", view);
+		aabbShader.setMat4("projection", projection);
+
 		//Drawing sprites
-		for (auto it = sprites.sprites.rbegin(); it != sprites.sprites.rend(); ++it)
+		for (auto it = level.sprites.rbegin(); it != level.sprites.rend(); ++it)
 		{
 			SR->DrawSprite(*it, camera);
 		}
 
-		//Drawing icons
+		//Drawing icons test
 		glDisable(GL_DEPTH_TEST);
+		ABR->DrawAABB(aabb);
 		UIR->DrawIcon(bounce, camera, *tagIcons);
 		glEnable(GL_DEPTH_TEST);
 
 		//Logic update
-		if (trigger.Intersect(camera.getPosition()))
+		if (trigger.OnEnter(camera.getPosition()))
 		{
 			bounce.type = IconType::TRIGGER_INACTIVE;
 			AudioSystem::SetSoundStartTime(1, 70.0F);
@@ -151,6 +162,7 @@ void Engine::RawInput(GLFWwindow *window, Camera &cam)
 
 void Engine::CallbacksInput(GLFWwindow *window)
 {
+	//GLFW
 	glfwSetMouseButtonCallback(window, Input::MouseButtonCallback);
 	glfwSetScrollCallback(window, Input::MouseScrollCallback);
 	glfwSetCursorPosCallback(window, Input::CursorPositionCallback);
@@ -159,4 +171,11 @@ void Engine::CallbacksInput(GLFWwindow *window)
 	glfwSetWindowSizeCallback(window, Input::WindowSizeCallback);
 	glfwSetWindowCloseCallback(window, Input::WindowCloseCallback);
 	glfwSetWindowMaximizeCallback(window, Input::WindowMaximizeCallback);
+
+	//GL
+	//glDebugMessageCallback(GLCallbacks::MessageCallback, nullptr);
 }
+
+
+
+

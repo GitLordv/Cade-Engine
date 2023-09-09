@@ -16,14 +16,15 @@ Camera::Camera(const CameraConfig &config)
 void Camera::PreInitCamera(const CameraConfig &config)
 {
 	front = glm::vec3(0.0F, 0.0F, -1.0F);
-	up    = glm::vec3(0.0F, 1.0F, 0.0F);
+	up = glm::vec3(0.0F, 1.0F, 0.0F);
 	pitch = 0.0F;
 	yaw = -90.0F;
 	worldUp = up;
 	position = config.position;
 	speed = config.speed;
 	sensitivity = config.sens;
-	inputActive = true;
+	isInputActive = true;
+	isEyeLocked = false;
 
 	UpdateCameraVectors();
 }
@@ -63,19 +64,15 @@ void Camera::MouseMovingInput(float xoffset, float yoffset, bool constrainPitch)
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
-	yaw   += xoffset;
+	yaw += xoffset;
 	pitch += yoffset;
 
 	if (constrainPitch)
 	{
 		if (pitch > 89.0F)
-		{
 			pitch = 89.0F;
-		}
 		if (pitch < -89.0F)
-		{
 			pitch = -89.0F;
-		}
 	}
 	UpdateCameraVectors();
 }
@@ -106,7 +103,7 @@ bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration,
 {
 	auto currentTime = Time::FixedTime();
 	auto elapsedTime = currentTime - startTime;
-	auto progress = static_cast<float>(elapsedTime / duration);
+	float progress = static_cast<float>(elapsedTime / duration);
 	progress = glm::clamp(progress, 0.0F, 1.0F);
 
 	if (progress >= 1.0F)
@@ -116,15 +113,13 @@ bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration,
 		return true;
 	}
 
-	// Calculate the current segment based on the progress
-	float segmentProgress = progress * (controlPoints.size() - 1);
-	size_t currentSegment = static_cast<size_t>(segmentProgress);
-	float segmentFraction = segmentProgress - currentSegment;
+	float segmentDuration = duration / (controlPoints.size() - 1);
+	size_t currentSegment = static_cast<size_t>(progress * (controlPoints.size() - 1));
+	float segmentProgress = static_cast<float>(elapsedTime - currentSegment * segmentDuration) / segmentDuration;
 
-	// Calculate the current position between the current and next control points
 	glm::vec3 startPos = controlPoints[currentSegment];
 	glm::vec3 endPos = controlPoints[currentSegment + 1];
-	glm::vec3 newPos = glm::mix(startPos, endPos, segmentFraction);
+	glm::vec3 newPos = glm::mix(startPos, endPos, segmentProgress);
 
 	setPosition(newPos);
 
@@ -166,18 +161,44 @@ void Camera::setSensitivity(const float value)
 	sensitivity = value;
 }
 
+void Camera::setEye(const glm::vec3 &newEye)
+{
+	if (!isEyeLocked)
+	{
+		glm::vec3 newFront = glm::normalize(newEye);
+		pitch = glm::degrees(glm::asin(newFront.y));
+		yaw = glm::degrees(atan2(newFront.z, newFront.x));
+		UpdateCameraVectors();
+	}
+}
+
 //State
 void Camera::ActivateInput()
 {
-	inputActive = true;
+	isInputActive = true;
 }
 
 void Camera::DeactivateInput()
 {
-	inputActive = false;
+	isInputActive = false;
 }
 
-bool Camera::isActiveInput()
+bool Camera::isActiveInput() const 
 {
-	return inputActive;
+	return isInputActive;
+}
+
+void Camera::LockEye()
+{
+	isEyeLocked = true;
+}
+
+void Camera::UnlockEye()
+{
+	isEyeLocked = false;
+}
+
+bool Camera::isLockedEye() const 
+{
+	return isEyeLocked;
 }

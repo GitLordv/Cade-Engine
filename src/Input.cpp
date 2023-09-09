@@ -113,7 +113,7 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 		lastX = static_cast<double>(xpos);
 		lastY = static_cast<double>(ypos);
 
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		{
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			disabledCursor = true;
@@ -162,11 +162,22 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 		static auto start = glm::vec3(0.0F);
 		static auto target = glm::vec3(0.0F, 0.0F, 5.0F);
 
-		std::vector<glm::vec3> path =
+		/*std::vector<glm::vec3> path =
 		{
 			glm::vec3(2.6F, 0.0F,  10.5F),
 			glm::vec3(100.0F, 0.0F,  10.5F),
 			glm::vec3(170.0F, 0.0F, -6.5F),
+		};*/
+
+		std::vector<glm::vec3> path =
+		{
+			glm::vec3(2.6F, 0.0F, 10.5F),
+			glm::vec3(0.0F, -3.0F, -7.5F),
+			glm::vec3(4.0F, 2.0F, 15.5F),
+			glm::vec3(4.0F, 2.0F, 17.5F),
+			glm::vec3(0.0F, 6.0F, -39.5F),
+			glm::vec3(0.0F, 0.0F, -38.5F),
+			glm::vec3(0.0F, 0.0F, -7.5F),
 		};
 
 		if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS && !isAnimating)
@@ -174,9 +185,8 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 			isAnimating = true;
 			start = cam.getPosition();
 			startTime = Time::FixedTime();
-
 		}
-		if (isAnimating && cam.AnimatePath(path, 60.0, startTime))
+		if (isAnimating && cam.AnimatePath(path, 15.0, startTime))
 		{
 			isAnimating = false;
 		}

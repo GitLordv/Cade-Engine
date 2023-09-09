@@ -15,6 +15,7 @@ public:
 
     void DrawIcon(Icon &iconData, Camera &cam, Texture &atlas);
     void DrawSprite(Level::Sprite &levelData, Camera &cam);
+    void DrawAABB(const AABB &aabb);
 
     static inline bool isWire = false;
 

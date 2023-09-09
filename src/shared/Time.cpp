@@ -18,7 +18,7 @@ double Time::FixedTime()
 
 double Time::DeltaTime()
 {
-    static double oldTime = mainTime; // Запоминаем предыдущее значение mainTime.
+    static double oldTime = mainTime;
     double newTime = glfwGetTime();
 
     double deltaTime = newTime - oldTime;

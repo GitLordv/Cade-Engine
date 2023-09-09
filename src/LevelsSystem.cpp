@@ -62,7 +62,6 @@ auto LevelsSystem::LoadLevel(std::string_view path) -> Level
 
 		auto track = AudioSystem::LoadSound(attrPath);
 		AudioSystem::PlaySound2D(track, attrVolume, attrLoop);
-		//AudioSystem::SetSoundStartTime(track, 50.0F);
 	}
 
 	//Load audio
@@ -96,16 +95,12 @@ auto LevelsSystem::LoadLevel(std::string_view path) -> Level
 		bool attrIsLight		 = spriteNode.attribute("isLight"  ).as_bool();
 		bool attrUseFog			 = spriteNode.attribute("useFog"   ).as_bool();
 
-
-
 		if (attrUVRect.empty()) { attrUVRect = static_cast<std::string>("0,0,1,1"); }
 		if (attrSize.empty())   { attrSize   = static_cast<std::string>("1,1");     }
 		if (attrColor.empty())  { attrColor  = static_cast<std::string>("1,1,1,1"); }
 		if (!spriteNode.attribute("isLight")) { attrIsLight = false; }
 		if (!spriteNode.attribute("useFog"))  { attrUseFog  = true; }
 
-
-		//Other
 		auto textureIterator = textureMap.find(attrTexture);
 
 		sprite.name     = attrName;
@@ -181,18 +176,18 @@ auto LevelsSystem::SplitStringToVec(const std::string &str) -> T
 	{
 		if (substring.empty())
 		{
-			floatValues.push_back(0.0);
+			floatValues.emplace_back(0.0);
 		}
 		else
 		{
 			try
 			{
-				floatValues.push_back(std::stof(substring));
+				floatValues.emplace_back(std::stof(substring));
 			}
 			catch (const std::exception &e)
 			{
 				std::cerr << "Error: Unable to convert substring: " << e.what() << std::endl;
-				floatValues.push_back(0.0);
+				floatValues.emplace_back(0.0);
 			}
 		}
 	}
