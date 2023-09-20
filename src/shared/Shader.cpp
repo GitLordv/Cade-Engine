@@ -13,6 +13,11 @@ Shader::Shader(std::string vertexPath, std::string fragmentPath)
 	LoadShader(vertexPath, fragmentPath);
 }
 
+//Shader::Shader(const GLchar* vertexCode, const GLchar* fragmentCode)
+//{
+//	LoadShaderStr(vertexCode, fragmentCode);
+//}
+
 void Shader::LoadShader(std::string vertexPath, std::string fragmentPath, std::string geometryPath)
 {
 	std::string vertexCode;
@@ -145,6 +150,32 @@ void Shader::LoadShader(std::string vertexPath, std::string fragmentPath)
 	glDeleteShader(VertexShader);
 	glDeleteShader(FragmentShader);
 }
+
+//void Shader::LoadShaderStr(const GLchar* vertexCode, const GLchar* fragmentCode)
+//{
+//	//Vertex shader
+//	GLuint VertexShader = glCreateShader(GL_VERTEX_SHADER);
+//	glShaderSource(VertexShader, 1, &vertexCode, nullptr);
+//	glCompileShader(VertexShader);
+//	CheckCompileErrors(VertexShader, "VERTEX");
+//
+//	//Pixel shader
+//	GLuint FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+//	glShaderSource(FragmentShader, 1, &fragmentCode, nullptr);
+//	glCompileShader(FragmentShader);
+//	CheckCompileErrors(FragmentShader, "FRAGMENT");
+//
+//	//Shader Program
+//	program = glCreateProgram();
+//	glAttachShader(program, VertexShader);
+//	glAttachShader(program, FragmentShader);
+//	glLinkProgram(program);
+//	CheckCompileErrors(program, "PROGRAM");
+//
+//	//Delete
+//	glDeleteShader(VertexShader);
+//	glDeleteShader(FragmentShader);
+//}
 
 void Shader::use()
 {

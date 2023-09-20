@@ -9,6 +9,7 @@
 
 #include "engine/audio/AudioSystem.h"
 
+
 class Input
 {
 public:
@@ -21,6 +22,7 @@ public:
 	static void WindowSizeCallback(GLFWwindow *window, int width, int height);
 	static void WindowCloseCallback(GLFWwindow *window);
 	static void WindowMaximizeCallback(GLFWwindow *window, int maximized);
+	static void FileDropCallback(GLFWwindow *window, int count, const char** paths);
 
 	//Raw
 	static void ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime);

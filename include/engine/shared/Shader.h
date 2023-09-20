@@ -6,13 +6,15 @@
 class Shader
 {
 public:
-	
+
 	Shader();
 	Shader(std::string vertexPath, std::string fragmentPath, std::string geometryPath);
 	Shader(std::string vertexPath, std::string fragmentPath);
+	//Shader(const GLchar* vertexCode, const GLchar* fragmentCode);
 
 	void LoadShader(std::string vertexPath, std::string fragmentPath, std::string geometryPath);
 	void LoadShader(std::string vertexPath, std::string fragmentPath);
+	void LoadShaderStr(const GLchar* vertexCode, const GLchar* fragmentCode);
 
 	void use();
 	void setInt(const std::string &name, GLint value) const;
@@ -28,6 +30,6 @@ public:
 private:
 
 	void CheckCompileErrors(GLuint shader, const std::string &type);
-	
+
 	GLuint program;
 };

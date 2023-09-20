@@ -7,31 +7,35 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 #include "GLFW/glfw3.h"
-#include "glbinding/gl/gl.h"
+#include "glbinding/gl46core/gl.h"
 #include "glbinding/glbinding.h"
 #include "globjects/globjects.h"
-#include "glbinding/gl/extension.h"
 
-//Std libs
+#include <type_traits>
 #include <filesystem>
+#include <algorithm>
 #include <iostream>
-#include <sstream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <array>
-#include <algorithm>
 #include <memory>
+#include <ranges>
+#include <array>
+
 
 using namespace gl;
-using GLid = GLuint;
+using GLid = unsigned int;
 
 namespace Custom
 {
 	static inline auto GetVendorInfo = []()
 	{
-		std::clog << "Log: OpenGL version: " << glGetString(GL_VERSION) << std::endl << std::endl;
+		std::clog << "Log: OpenGL version: " << glGetString(GL_VERSION) << "\n";
+		std::clog << "Log: OpenGL device: " << glGetString(GL_RENDERER) << "\n";
 	};
+	
+	
 
 
 	static inline auto ConvertToOGLColor = [](GLuint r, GLuint g, GLuint b, GLuint a)
@@ -63,14 +67,23 @@ namespace Custom
 		};
 
 		GLfloat r, g, b;
-
 		HexToRgb(r, g, b, hexValue);
 		glClearColor(r, g, b, 1.0F);
 	}
 
+
+
+	static bool isLevelLoaded = false;
+	static bool isDroppedFile = false;
+	static inline std::string droppedFile;
+	static inline void setDroppedFile(const char* path)
+	{
+		droppedFile = path;
+	}
+
+	static inline auto getDroppedFile()
+	{
+		return droppedFile;
+	}
+
 }
-
-//GLOBAL
-static inline const std::string &dataFolder = "Data";
-
-

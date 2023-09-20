@@ -4,11 +4,10 @@
 #include "AL/alc.h"
 #include "AL/alext.h"
 
-#include <iostream>
+#include <string>
 #include <vector>
 #include <optional>
-#include <string_view>
-
+#include <iostream>
 
 using AudioData = std::vector<int16_t>;
 using ALid = ALuint;

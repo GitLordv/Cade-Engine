@@ -1,5 +1,9 @@
+#pragma once
+
 #include "engine/shared/Utils.h"
+
 #include <unordered_set>
+
 
 namespace GLCallbacks
 {

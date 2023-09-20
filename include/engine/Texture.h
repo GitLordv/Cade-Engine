@@ -19,12 +19,15 @@ public:
 	void Unbind();
 
 	GLid getId() const;
+	GLint getWidth() const;
+	GLint getHeight() const;
+
 
 private:
 
-	GLuint id;
+	GLid id;
+	GLint width;
+	GLint height;
 	GLubyte* pixels;
-	int width;
-	int height;
 };
 

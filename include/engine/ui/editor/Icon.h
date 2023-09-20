@@ -11,14 +11,15 @@ enum class IconType : unsigned short
 	BOUNCE_TARGET,
 	TWEEN,
 	TRIGGER,
-	TRIGGER_INACTIVE
+	TRIGGER_INACTIVE,
+	NONE
 };
 
-struct Icon
+struct IconData
 {
-	IconType type;
-	UVRect uv;
-	glm::vec3 position;
-	glm::vec2 size;
-	float angle;
+	IconType type      = IconType::NONE;
+	UVRect uv		   = UVRect(0.0F, 0.0F, 1.0F, 1.0F);
+	glm::vec3 position = glm::vec3(0.0F,0.0F,0.0F);
+	glm::vec2 size	   = glm::vec2(1.0F, 1.0F);
+	float angle		   = 0.0F;
 };

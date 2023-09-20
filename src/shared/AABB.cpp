@@ -47,22 +47,20 @@ glm::vec3 AABB::getMax() const
 
 void AABB::setPosition(const glm::vec3 newPosition)
 {
-    glm::vec3 center = (min + max) / 2.0F;
-    glm::vec3 offset = newPosition - center;
-
-    min += offset;
-    max += offset;
+    glm::vec3 size = getSize();
+    min = newPosition - size / 2.0F;
+    max = newPosition + size / 2.0F;
     position = newPosition;
 }
 
-void AABB::setSize(glm::vec3 newSize)
+void AABB::setSize(const glm::vec3 newSize)
 {
-    glm::vec3 center = (min + max) / 2.0F; 
+    glm::vec3 center = (min + max) / 2.0F;
     glm::vec3 halfSize = newSize / 2.0F;
-
     min = center - halfSize;
     max = center + halfSize;
 }
+
 
 void AABB::setMin(const glm::vec3 &min)
 {

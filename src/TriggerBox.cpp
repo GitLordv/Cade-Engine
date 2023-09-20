@@ -1,5 +1,8 @@
-#include "engine/TriggerBox.h"
 #include "engine/shared/Utils.h"
+
+#include "engine/shared/AABB.h"
+#include "engine/TriggerBox.h"
+
 
 TriggerBox::TriggerBox()
 	: isInside(false), isActivated(true), mode(TriggerMode::MULTIPLE), position(glm::vec3(0.0F)), size(AABB()) {}
@@ -9,7 +12,6 @@ TriggerBox::TriggerBox(glm::vec3 position, AABB &volume, TriggerMode mode)
 
 bool TriggerBox::OnEnter(const glm::vec3 &point)
 {
-	//AABB boundingBox(position - size.getMin() / 2.0F, position + size.getMax() / 2.0F);
 	AABB boundingBox(size.getMin(), size.getMax());
 	boundingBox.setPosition(position);
 	bool isIntersect = boundingBox.IntersectPoint(point);

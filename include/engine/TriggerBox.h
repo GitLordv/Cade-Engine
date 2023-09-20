@@ -1,10 +1,9 @@
 #pragma once
 
-#include "engine/shared/AABB.h"
-#include "engine/shared/Shader.h"
-
 #include "glm/glm.hpp"
-#include <iostream>
+
+
+class AABB;
 
 enum class TriggerMode : unsigned short
 {

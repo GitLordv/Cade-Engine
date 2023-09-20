@@ -2,7 +2,7 @@
 #include "engine/Renderer.h"
 #include "engine/audio/AudioSystem.h"
 
-
+#include "engine/Camera.h"
 
 //Callbacks
 void Input::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
@@ -89,6 +89,19 @@ void Input::WindowMaximizeCallback(GLFWwindow *window, int maximized)
 	}
 }
 
+void Input::FileDropCallback(GLFWwindow *window, int count, const char **paths)
+{
+	Custom::isDroppedFile = true;
+	for (auto i = 0; i < count; ++i)
+	{
+		//std::cout << paths[i] << "\n";
+		Custom::setDroppedFile(paths[i]);
+		std::cout << Custom::droppedFile << std::endl;
+		std::cout << Custom::isDroppedFile << std::endl;
+		std::cout << Custom::isLevelLoaded << std::endl;
+	}
+}
+
 
 //Basic input
 void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
@@ -160,39 +173,29 @@ void Input::ProcessInput(GLFWwindow *window, Camera &cam, double deltaTime)
 		static auto isAnimating = false;
 		static auto startTime = 0.0;
 		static auto start = glm::vec3(0.0F);
+		static auto startEye = glm::vec3(0.0F);
 		static auto target = glm::vec3(0.0F, 0.0F, 5.0F);
-
-		/*std::vector<glm::vec3> path =
-		{
-			glm::vec3(2.6F, 0.0F,  10.5F),
-			glm::vec3(100.0F, 0.0F,  10.5F),
-			glm::vec3(170.0F, 0.0F, -6.5F),
-		};*/
-
-		std::vector<glm::vec3> path =
-		{
-			glm::vec3(2.6F, 0.0F, 10.5F),
-			glm::vec3(0.0F, -3.0F, -7.5F),
-			glm::vec3(4.0F, 2.0F, 15.5F),
-			glm::vec3(4.0F, 2.0F, 17.5F),
-			glm::vec3(0.0F, 6.0F, -39.5F),
-			glm::vec3(0.0F, 0.0F, -38.5F),
-			glm::vec3(0.0F, 0.0F, -7.5F),
-		};
 
 		if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS && !isAnimating)
 		{
 			isAnimating = true;
 			start = cam.getPosition();
+			startEye = cam.getEye();
 			startTime = Time::FixedTime();
 		}
-		if (isAnimating && cam.AnimatePath(path, 15.0, startTime))
+		if (isAnimating)
 		{
-			isAnimating = false;
+			bool posAnimationFinished = cam.AnimatePos(start, glm::vec3(0.0F, 0.0F, 5.5F), 1.35F, startTime);
+			bool eyeAnimationFinished = cam.AnimateEye(startEye, glm::vec3(0.0F, 0.0F, -1.0F), 1.35F, startTime);
+
+			if (posAnimationFinished && eyeAnimationFinished) 
+			{
+				isAnimating = false;
+			}
 		}
 
 
-		//Change camera speed 
+		//Switch camera speed 
 		static bool isShiftPressed = false;
 		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 		{

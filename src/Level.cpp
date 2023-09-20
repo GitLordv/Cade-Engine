@@ -1,231 +1,247 @@
 #include "engine/Level.h"
+#include "engine/audio/AudioSystem.h"
 
 
-std::vector<SpriteData> Level::LoadLevel(std::string_view filePath)
+Level::Level(const std::string &path, Camera &cam) : cam(cam) 
 {
-	std::vector<SpriteData> spriteData;
-	std::unordered_map<std::string, std::shared_ptr<Texture>> texturePathMap;
+	if(!path.empty()) loadedLevel = LoadLevel(path);
 
-	auto splitStringToFloats = [](const std::string &str, const char delimiter = ',') -> std::vector<float>
-	{
-		std::vector<float> floatValues;
-		std::stringstream ss(str);
-		std::string substring;
-		while (getline(ss, substring, delimiter)) {
-			floatValues.push_back(std::stof(substring));
-		}
-		return floatValues;
-	};
-	auto splitStringToVec2 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec2
-	{
-		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-		if (floatValues.size() >= 2) {
-			return glm::vec2(floatValues[0], floatValues[1]);
-		}
-		return glm::vec2(0.0f);
-	};
-	auto splitStringToVec3 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec3
-	{
-		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-		if (floatValues.size() >= 3) {
-			return glm::vec3(floatValues[0], floatValues[1], floatValues[2]);
-		}
-		return glm::vec3(0.0f);
-	};
-	auto splitStringToVec4 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec4
-	{
-		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-		if (floatValues.size() >= 4) {
-			return glm::vec4(floatValues[0], floatValues[1], floatValues[2], floatValues[3]);
-		}
-		return glm::vec4(0.0f);
-	};
-	auto splitStringToUVRegion = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> UVRegion
-	{
-		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-		if (floatValues.size() >= 4) {
-			return UVRegion(floatValues[0], floatValues[1], floatValues[2], floatValues[3]);
-		}
-		return UVRegion(0.0f, 0.0f, 1.0f, 1.0f);
-	};
+    missingTexture = std::make_shared<Texture>();
+	missingTexture->Generate("Data/Engine/Missing.png");
+}
 
-	pugi::xml_document doc;
-	if (!doc.load_file(filePath.data()))
+auto Level::LoadLevel(const std::string &path) -> LevelData
+{
+    //Camera &camera = cam;
+    LevelData levelData;
+    std::unordered_map<std::string, std::shared_ptr<Texture>> texturePaths;
+
+
+    XmlDocument doc;
+    if (!doc.load_file(path.data()))
+    {
+        std::cerr << "\nFailed to open level file: " << path.data() << std::endl;
+        return levelData;
+    }
+
+    XmlNode levelNode = doc.child("Level");
+    XmlNode spritesNode = levelNode.child("Sprites");
+
+    //Load camera
+    XmlNode cameraNode = levelNode.child("Camera");
+    if (!cameraNode.empty())
+    {
+        //Get attribute values
+        std::string position = cameraNode.attribute("position").as_string();
+
+        auto cameraPos = SplitStringToVec<glm::vec3>(position);    
+        cam.setPosition(cameraPos);
+    }
+
+    //Load textures
+    XmlNode texturesNode = levelNode.child("Textures");
+    for (XmlNode textureNode : texturesNode.children("Texture"))
+    {
+        std::string attrName = textureNode.attribute("name").as_string();
+        std::string attrPath = textureNode.attribute("path").as_string();
+        std::string attrWrap = textureNode.attribute("wrap").as_string();
+
+        if (attrName.empty() || attrPath.empty())
+        {
+            continue; //Skip this texture
+        }
+
+        auto [it, inserted] = texturePaths.emplace(attrPath, std::make_shared<Texture>());
+        if (inserted)
+        {
+            it->second->Generate(attrPath, attrWrap);
+        }
+        textureMap[attrName] = it->second;
+    }
+
+    //Load audio
+    for (XmlNode audioNode : levelNode.children("Audio2D"))
+    {
+        std::string attrPath = audioNode.attribute("path").as_string();
+        float attrVolume = audioNode.attribute("volume").as_float();
+        bool attrLoop = audioNode.attribute("loop").as_bool();
+
+        AudioSystem::PlaySound2D(AudioSystem::LoadSound(attrPath), attrVolume, attrLoop);
+    }
+
+    //Load sprites
+    for (XmlNode spriteNode : spritesNode.children("Sprite"))
+    {
+        SpriteData sprite;
+
+        //Get attribute values
+        std::string name      = spriteNode.attribute("name"    ).as_string();
+        std::string texture   = spriteNode.attribute("texture" ).as_string();
+        std::string uvRect    = spriteNode.attribute("uv"      ).as_string();
+        std::string uvRectPx  = spriteNode.attribute("uvpx"    ).as_string();
+        std::string position  = spriteNode.attribute("position").as_string();
+        std::string scroll    = spriteNode.attribute("scSpeed" ).as_string();
+        std::string rotation  = spriteNode.attribute("angle"   ).as_string();
+        std::string size      = spriteNode.attribute("size"    ).as_string();
+        std::string color     = spriteNode.attribute("color"   ).as_string();
+        float worldUV         = spriteNode.attribute("WuvScale").as_float();
+        bool isLight          = spriteNode.attribute("light"   ).as_bool();
+        bool useFog           = spriteNode.attribute("useFog"  ).as_bool();
+
+        if (!uvRectPx.empty())
+        {
+            sprite.isUvAsPixels = true;
+            spriteNode.remove_attribute("uv");
+        }
+
+        if (spriteNode.attribute("WuvScale"))
+        {
+            sprite.isWorldUV = true;
+            sprite.isUvAsPixels = false;
+            spriteNode.remove_attribute("uv");
+            spriteNode.remove_attribute("uvpx");
+            sprite.uvScale = worldUV;
+        }
+
+        if (uvRect.empty())
+        {
+            uvRect = "0,0,1,1";
+        }
+
+        if (size.empty())
+        {
+            size = "1,1";
+        }
+
+        if (color.empty())
+        {
+            color = "1,1,1,1";
+        }
+
+        if (!spriteNode.attribute("light"))
+        {
+            isLight = false;
+        }
+
+        if (!spriteNode.attribute("useFog"))
+        {
+            useFog = true;
+        }
+
+        auto iterator = textureMap.find(texture);
+        if (iterator != textureMap.end())
+        {
+            sprite.texture = iterator->second;
+        }
+        else
+        {
+            sprite.texture = missingTexture;
+        }
+
+        sprite.uvRect = sprite.isUvAsPixels ? SplitStringToVec<UVRect>(uvRectPx) : SplitStringToVec<UVRect>(uvRect);
+        sprite.position = SplitStringToVec<glm::vec3>(position);
+        sprite.rotation = SplitStringToVec<glm::vec3>(rotation);
+        sprite.scSpeed  = SplitStringToVec<glm::vec2>(scroll);
+        sprite.size = SplitStringToVec<glm::vec2>(size);
+        sprite.tint = SplitStringToVec<glm::vec4>(color);
+        sprite.isLight = isLight;
+        sprite.useFog  = useFog;
+
+        //Parse sprite animation attributes
+        XmlNode animationNode = spriteNode.child("Animation");
+        if (!animationNode.empty())
+        {
+            sprite.isAnim = true;
+            sprite.animation.type = animationNode.attribute("type").as_string();
+            sprite.animation.speed = animationNode.attribute("speed").as_float();
+        }
+        else
+        {
+            sprite.isAnim = false;
+        }
+
+        //Parse sprite additional attributes
+        XmlNode addinNode = spriteNode.child("Additional");
+        if (!addinNode.empty())
+        {
+            sprite.addin.isAdditional = true;
+
+            XmlNode fadeNode = addinNode.child("OpacityFade");
+            if (!fadeNode.empty())
+            {
+                sprite.addin.isFade = true;
+                sprite.addin.fadeEnd = fadeNode.attribute("fadeEnd").as_float();
+            }
+            else
+            {
+                sprite.addin.isFade = false;
+            }
+        }
+        else
+        {
+            sprite.addin.isAdditional = false;
+        }
+
+        levelData.sprites.emplace_back(sprite);
+    }
+
+    return levelData;
+}
+
+auto Level::SaveLevel(std::string_view path) -> void
+{
+
+}
+
+auto Level::getLoadedLevel() -> std::optional<LevelData>
+{
+	if (loadedLevel.sprites.size() > 0)
 	{
-		std::clog << "\nFailed open level file: " << filePath << std::endl;
+		return loadedLevel;
 	}
-
-	pugi::xml_node texturesNode = doc.child("Level").child("Textures");
-	for (pugi::xml_node textureNode : texturesNode.children("Texture"))
+	else
 	{
-		if (!textureNode.attribute("name") ||
-			!textureNode.attribute("path") ||
+		std::cout << "\nLEVEL: Level is empty!\n";
+		return std::nullopt;
+	}
+	return std::nullopt;
+}
 
-			textureNode.attribute("name").empty() ||
-			textureNode.attribute("path").empty())
+
+//Utils
+template <typename T>
+auto Level::SplitStringToVec(const std::string &str) -> T
+{
+	std::vector<GLfloat> floatValues;
+	std::stringstream ss(str);
+	std::string substring;
+
+	while (getline(ss, substring, ','))
+	{
+		if (substring.empty())
 		{
-			std::clog << "Missing or empty attributes in Texture node. Skipping." << std::endl;
-			continue;
-		}
-
-		// Parse texture attributes
-		std::string name = textureNode.attribute("name").as_string();
-		std::string path = textureNode.attribute("path").as_string();
-
-		// Check if texture path already exists
-		auto textureIterator = texturePathMap.find(path);
-		if (textureIterator != texturePathMap.end())
-		{
-			// Texture with the same path already exists, reuse it
-			textureMap[name] = textureIterator->second;
+			floatValues.emplace_back(0.0);
 		}
 		else
 		{
-			// Texture is not loaded, create and load it
-			auto texture = std::make_shared<Texture>();
-			texture->Generate(path);
-			textureMap[name] = texture;
-			texturePathMap[path] = texture;
+			try
+			{
+				floatValues.emplace_back(std::stof(substring));
+			}
+			catch (const std::exception &e)
+			{
+				std::cerr << "Error: Unable to convert substring: " << e.what() << std::endl;
+				floatValues.emplace_back(0.0);
+			}
 		}
 	}
 
-	pugi::xml_node spritesNode = doc.child("Level").child("Sprites");
-	for (pugi::xml_node spriteNode : spritesNode.children("Sprite"))
+	T result{};
+	size_t numFloats = std::min(floatValues.size(), sizeof(T) / sizeof(float));
+	for (size_t i = 0; i < numFloats; ++i)
 	{
-		if (!spriteNode.attribute("name")	  || 
-			!spriteNode.attribute("texture")  || 
-			!spriteNode.attribute("uv")		  ||
-			!spriteNode.attribute("position") ||
-			!spriteNode.attribute("scSpeed")  || 
-			!spriteNode.attribute("rotAngle") ||
-			!spriteNode.attribute("size")	  ||
-			!spriteNode.attribute("color")    ||
-
-			spriteNode.attribute("name").empty()	  ||
-			spriteNode.attribute("texture").empty()   ||
-			spriteNode.attribute("uv").empty()		  ||
-			spriteNode.attribute("position").empty()  ||
-			spriteNode.attribute("scSpeed").empty()   ||
-			spriteNode.attribute("rotAngle").empty()  ||
-			spriteNode.attribute("size").empty()	  ||
-			spriteNode.attribute("color").empty())
-		{
-			std::clog << "Missing or empty attributes in Sprite node. Skipping." << std::endl;
-			continue;
-		}
-
-		SpriteData sprite;
-		sprite.name = spriteNode.attribute("name").as_string();
-		sprite.texture = textureMap[spriteNode.attribute("texture").as_string()];
-		sprite.uvRegion = UVRegion(splitStringToUVRegion(spriteNode.attribute("uv").as_string()));
-		sprite.position = glm::vec3(splitStringToVec3(spriteNode.attribute("position").as_string()));
-		sprite.scSpeed = glm::vec2(splitStringToVec2(spriteNode.attribute("scSpeed").as_string()));
-		sprite.rotation = glm::vec3(splitStringToVec3(spriteNode.attribute("rotAngle").as_string()));
-		sprite.size = glm::vec2(splitStringToVec2(spriteNode.attribute("size").as_string()));
-		sprite.tint = glm::vec4(splitStringToVec4(spriteNode.attribute("color").as_string()));
-
-		spriteData.push_back(sprite);
+		reinterpret_cast<float*>(&result)[i] = floatValues[i];
 	}
-	return spriteData;
-}
 
-//std::vector<SpriteData> Level::LoadLevel(const std::string &filePath)
-//{
-//	std::vector<SpriteData> spriteData;
-//	std::unordered_map<std::string, std::shared_ptr<Texture>> texturePathMap;
-//
-//	auto splitStringToFloats = [](const std::string &str, const char delimiter = ',') -> std::vector<float>
-//	{
-//		std::vector<float> floatValues;
-//		std::stringstream ss(str);
-//		std::string substring;
-//		while (getline(ss, substring, delimiter)) {
-//			floatValues.push_back(std::stof(substring));
-//		}
-//		return floatValues;
-//	};
-//	auto splitStringToVec2 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec2
-//	{
-//		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-//		if (floatValues.size() >= 2) {
-//			return glm::vec2(floatValues[0], floatValues[1]);
-//		}
-//		return glm::vec2(0.0f);
-//	};
-//	auto splitStringToVec3 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec3
-//	{
-//		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-//		if (floatValues.size() >= 3) {
-//			return glm::vec3(floatValues[0], floatValues[1], floatValues[2]);
-//		}
-//		return glm::vec3(0.0f);
-//	};
-//	auto splitStringToVec4 = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> glm::vec4
-//	{
-//		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-//		if (floatValues.size() >= 4) {
-//			return glm::vec4(floatValues[0], floatValues[1], floatValues[2], floatValues[3]);
-//		}
-//		return glm::vec4(0.0f);
-//	};
-//	auto splitStringToUVRegion = [splitStringToFloats](const std::string &str, const char delimiter = ',') -> UVRegion
-//	{
-//		std::vector<float> floatValues = splitStringToFloats(str, delimiter);
-//		if (floatValues.size() >= 4) {
-//			return UVRegion(floatValues[0], floatValues[1], floatValues[2], floatValues[3]);
-//		}
-//		return UVRegion(0.0f, 0.0f, 1.0f, 1.0f);
-//	};
-//
-//	pugi::xml_document doc;
-//	if (!doc.load_file(filePath.c_str()))
-//	{
-//		std::clog << "\nFailed open level file: " << filePath << std::endl;
-//	}
-//
-//	pugi::xml_node texturesNode = doc.child("Level").child("Textures");
-//	for (pugi::xml_node textureNode : texturesNode.children("Texture"))
-//	{
-//		// Parse texture attributes
-//		std::string name = textureNode.attribute("name").as_string();
-//		std::string path = textureNode.attribute("path").as_string();
-//
-//		// Check if texture path already exists
-//		auto textureIterator = texturePathMap.find(path);
-//		if (textureIterator != texturePathMap.end())
-//		{
-//			// Texture with the same path already exists, reuse it
-//			textureMap[name] = textureIterator->second;
-//		}
-//		else
-//		{
-//			// Texture is not loaded, create and load it
-//			auto texture = std::make_shared<Texture>();
-//			texture->Generate(path);
-//			textureMap[name] = texture;
-//			texturePathMap[path] = texture;
-//		}
-//	}
-//
-//	pugi::xml_node spritesNode = doc.child("Level").child("Sprites");
-//	for (pugi::xml_node spriteNode : spritesNode.children("Sprite"))
-//	{
-//		SpriteData sprite;
-//		sprite.name = spriteNode.attribute("name").as_string();
-//		sprite.texture = textureMap[spriteNode.attribute("texture").as_string()];
-//		sprite.uvRegion = UVRegion(splitStringToUVRegion(spriteNode.attribute("uv").as_string()));
-//		sprite.position = glm::vec3(splitStringToVec3(spriteNode.attribute("position").as_string()));
-//		sprite.scSpeed = glm::vec2(splitStringToVec2(spriteNode.attribute("scSpeed").as_string()));
-//		sprite.rotation = glm::vec3(splitStringToVec3(spriteNode.attribute("rotAngle").as_string()));
-//		sprite.size = glm::vec2(splitStringToVec2(spriteNode.attribute("size").as_string()));
-//		sprite.tint = glm::vec4(splitStringToVec4(spriteNode.attribute("color").as_string()));
-//
-//		spriteData.push_back(sprite);
-//	}
-//	return spriteData;
-//}
-
-void Level::SaveLevel(const std::string &filePath)
-{
-
+	return result;
 }

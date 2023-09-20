@@ -5,9 +5,8 @@
 #define DR_FLAC_IMPLEMENTATION
 #include "drLibs/dr_flac.h"
 
-#include "cppfs/fs.h"
-#include "cppfs/FileHandle.h"
 #include "cppfs/FilePath.h"
+
 
 #include <fstream>
 
@@ -40,7 +39,7 @@ bool AudioBuffer::LoadFromFile(const std::string &filePath)
         return false;
     }
 
-    std::optional<std::pair<AudioInfo, AudioData>> rawData;  
+    std::optional<std::pair<AudioInfo, AudioData>> rawData;
     if (isWavExt)
     {
         rawData = LoadWavFile(filePath);
@@ -56,7 +55,7 @@ bool AudioBuffer::LoadFromFile(const std::string &filePath)
         return false;
     }
 
-    //std::clog << "Sound Data size: " << rawData.value().second.size() << std::endl;
+    std::clog << "Sound Data size: " << rawData.value().second.size() << std::endl;
 
     //Copy the audio data
     audioData = std::move(rawData.value().second);
@@ -100,7 +99,7 @@ auto AudioBuffer::LoadWavFile(const std::string &filePath) -> std::optional<std:
 
 auto AudioBuffer::LoadFlacFile(const std::string &filePath) -> std::optional<std::pair<AudioInfo, AudioData>>
 {
-    drflac* pFlac = drflac_open_file(filePath.c_str(), nullptr);
+    auto pFlac = drflac_open_file(filePath.c_str(), nullptr);
     if (!pFlac)
     {
         std::cerr << "Failed to open FLAC file: " << filePath << std::endl;

@@ -16,15 +16,13 @@ Texture::~Texture()
 
 void Texture::Generate(const std::string_view path, std::string_view wrap)
 {
-	glCreateTextures(GL_TEXTURE_2D, 1, &id);
-	
-	pixels = SOIL_load_image(path.data(), &width, &height, 0, SOIL_LOAD_AUTO);
+	pixels = SOIL_load_image(path.data(), &width, &height, 0, SOIL_LOAD_RGBA);
 	if (pixels == nullptr)
 	{
-		std::cerr << "Info: Texture loading Failed: " << path.data() << std::endl;
+		std::cerr << "Info: Texture data loading failed: " << path.data() << std::endl;
 		return;
 	}
-	
+
 	auto wrapS = GL_REPEAT;
 	auto wrapT = GL_REPEAT;
 
@@ -47,17 +45,24 @@ void Texture::Generate(const std::string_view path, std::string_view wrap)
 		}
 	}
 
-	glTextureParameteri(id, GL_TEXTURE_WRAP_S, wrapS);
-	glTextureParameteri(id, GL_TEXTURE_WRAP_T, wrapT);
+	glCreateTextures(GL_TEXTURE_2D, 1, &id);
+
 	glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	glTextureParameteri(id, GL_TEXTURE_WRAP_S, wrapS);
+	glTextureParameteri(id, GL_TEXTURE_WRAP_T, wrapT);
 
-	glTextureStorage2D(id, 1, GL_RGBA8, width, height);
+	glTextureParameterf(id, GL_TEXTURE_MAX_ANISOTROPY, 4.0F);
+
+	int mipLevels = 1 + (int)std::floor(std::log2(std::max(width, height)));
+
+	glTextureStorage2D(id, mipLevels, GL_RGBA8, width, height);
 	glTextureSubImage2D(id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
 	glGenerateTextureMipmap(id);
 
-	std::cout << "\nID: " << id << " | " << width << "x" << height << " | " << path << std::endl;
+	std::cout << "\nID: " << id << " | " << width << "x" << height << " | " << path;
 }
 
 void Texture::Bind()
@@ -73,4 +78,14 @@ void Texture::Unbind()
 GLid Texture::getId() const
 {
 	return id;
+}
+
+GLint Texture::getWidth() const
+{
+	return width;
+}
+
+GLint Texture::getHeight() const
+{
+	return height;
 }

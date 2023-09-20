@@ -1,9 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "engine/TriggerBox.h"
-#include <vector>
 
 
 struct CameraConfig
@@ -42,10 +42,12 @@ public:
 	glm::mat4 getViewMatrix() const;
 	glm::vec3 getPosition() const;
 	glm::vec3 getUp() const;
+	glm::vec3 getEye() const;
 	float getSpeed() const;
 
 	//Animate
 	bool AnimatePos(glm::vec3 &start, const glm::vec3 end, double duration, double startTime);
+	bool AnimateEye(glm::vec3 &start, const glm::vec3 end, double duration, double startTime);
 	bool AnimatePath(std::vector<glm::vec3> &controlPoints, double duration, double startTime);
 
 	//States
@@ -75,4 +77,6 @@ private:
 	float pitch;
 	float speed;
 	float sensitivity;
+
+	//glm::quat orientation;
 };

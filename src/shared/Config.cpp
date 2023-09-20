@@ -7,7 +7,7 @@
 
 void Config::SaveConfig(GLFWwindow *window)
 {
-	std::ofstream fout(dataFolder + "/" + configName);
+	std::ofstream fout("Data/" + configName);
 
 	//Window
 	int szW, szH;
@@ -32,7 +32,7 @@ void Config::LoadConfig(GLFWwindow *window)
 {
 	try
 	{
-		config = YAML::LoadFile(dataFolder + "/" + configName);
+		config = YAML::LoadFile("Data/" + configName);
 
 		//Load window size
 		const auto paramW = config["windowWidth"].as<std::string>();

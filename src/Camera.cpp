@@ -99,6 +99,18 @@ bool Camera::AnimatePos(glm::vec3 &start, const glm::vec3 end, double duration, 
 	return elapsedTime >= duration;
 }
 
+
+bool Camera::AnimateEye(glm::vec3 &start, const glm::vec3 end, double duration, double startTime)
+{
+	auto currentTime = Time::FixedTime();
+	auto elapsedTime = currentTime - startTime;
+	auto progress = static_cast<float>(elapsedTime / duration);
+	progress = glm::clamp(progress, 0.0F, 1.0F);
+	auto newEye = glm::mix(start, end, progress);
+	setEye(newEye);
+	return elapsedTime >= duration;
+}
+
 bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration, double startTime)
 {
 	auto currentTime = Time::FixedTime();
@@ -113,7 +125,7 @@ bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration,
 		return true;
 	}
 
-	float segmentDuration = duration / (controlPoints.size() - 1);
+	float segmentDuration = static_cast<float>(duration / (controlPoints.size() - 1));
 	size_t currentSegment = static_cast<size_t>(progress * (controlPoints.size() - 1));
 	float segmentProgress = static_cast<float>(elapsedTime - currentSegment * segmentDuration) / segmentDuration;
 
@@ -124,6 +136,15 @@ bool Camera::AnimatePath(std::vector<glm::vec3> &controlPoints, double duration,
 	setPosition(newPos);
 
 	return false;
+}
+
+glm::vec3 Camera::getEye() const
+{ 
+	glm::vec3 direction{};
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	return direction;
 }
 
 glm::mat4 Camera::getViewMatrix() const
